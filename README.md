@@ -2,78 +2,104 @@
 
 A FastAPI-based IT Help Desk ticketing system with SLA tracking, team management, and public review forms.
 
-## Quick Start
+## 🚀 Quickest Team Setup: Deploy to Railway (Free, 2 minutes)
+
+**No local installation needed for teammates.** Deploy once, everyone uses the URL.
+
+### Deploy to Railway
+1. Go to **https://railway.app** → Login with GitHub
+2. Click **"New Project"** → **"Deploy from GitHub repo"**
+3. Select `gladtidings-softwere.co-ticketing-system` → **"Deploy Now"**
+4. Wait ~2 minutes for build/deploy
+5. Click service → **Settings** → **Domains** → Copy URL (e.g., `https://gladtidings-helpdesk.up.railway.app`)
+6. Open URL → **Settings** page → Set **Public Base URL** to your Railway URL → Save
+7. **Share the URL with your team** - works on any device (phone, laptop, tablet)
+
+### Auto-Updates
+Push to GitHub → Railway auto-redeploys:
+```bash
+git add . && git commit -m "changes" && git push
+```
+
+---
+
+## 💻 Local Development Setup
 
 ```bash
-# 1. Navigate to project
-cd "gts ithd/ticketing-system"
+# 1. Clone
+git clone https://github.com/Nictitan/gladtidings-softwere.co-ticketing-system.git
+cd gladtidings-softwere.co-ticketing-system
 
-# 2. Create virtual environment
+# 2. Virtual environment
 python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\Activate.ps1
 
-# 3. Activate environment
-# macOS/Linux:
-source venv/bin/activate
-# Windows PowerShell:
-venv\Scripts\Activate.ps1
-# Windows CMD:
-venv\Scripts\activate.bat
-
-# 4. Install dependencies
+# 3. Install deps
 pip install -r requirements.txt
 
-# 5. Run the server
+# 4. Run
 python main.py
 ```
 
-## Access the App
+**Access:** http://localhost:8000
 
-Open your browser to: **http://localhost:8000**
+---
 
-## For Team Access (Multiple Users)
+## 🌐 Team Access Options
 
-### Option 1: Run on One Machine, Share via LAN
-1. Run the server on a machine that stays on (your machine, a spare laptop, etc.)
-2. Find that machine's LAN IP: `ipconfig` (Windows) or `ifconfig` / `ip a` (macOS/Linux)
-3. Teammates access: `http://<LAN-IP>:8000` (e.g., `http://192.168.1.50:8000`)
-4. **Important**: Go to **Settings** → Set **Public Base URL** to `http://<LAN-IP>:8000`
-   - This makes the "Review Form" link work on teammates' phones
+| Option | Best For | Setup Effort |
+|--------|----------|--------------|
+| **Railway (Recommended)** | Production team use | ⭐ Easiest - 2 min, free |
+| **LAN Sharing** | Quick local testing | Low - run on one machine |
+| **Render/Fly.io** | Alternative cloud | Low - similar to Railway |
+| **Local per person** | Development only | Each runs own copy |
 
-### Option 2: Deploy to a VPS/Cloud (Recommended for Production)
-Deploy to Railway, Render, Fly.io, DigitalOcean, etc.:
-- Set up a process manager (systemd/supervisor) or use Docker
-- Use nginx as reverse proxy with SSL
-- Set **Public Base URL** to your domain (e.g., `https://helpdesk.yourcompany.com`)
+### Option 1: Railway (Recommended) ✅
+- Free tier, auto-deploys from GitHub
+- Permanent URL, HTTPS, custom domains
+- **Teammates just click the link**
 
-### Option 3: Each Person Runs Locally
-Each teammate runs the steps in "Quick Start" on their own machine.
-- They'll have their own local database (tickets.db)
-- Good for testing, not for shared ticket data
+### Option 2: LAN Sharing (Quick Test)
+1. Run `python main.py` on a machine that stays on
+2. Find LAN IP: `ipconfig` (Win) / `ifconfig` (Mac/Linux)
+3. Team accesses: `http://<LAN-IP>:8000`
+4. **Settings → Public Base URL = `http://<LAN-IP>:8000`**
 
-## Key Features
+### Option 3: Render (Alternative)
+1. https://render.com → New → Web Service
+2. Connect GitHub repo → Auto-deploys
+3. Same steps as Railway
 
-| Feature | Description |
-|---------|-------------|
-| **Ticket Management** | Create, update, park, close, reset, delete tickets |
-| **SLA Tracking** | Auto-calculates SLA status (Met/Missed/Pending) based on priority targets |
-| **Priority Levels** | Critical (2hr), Technical (8hr), Ordinary (24hr) - configurable |
-| **Team Management** | Add/remove team members, assign ticket owners |
-| **Public Review Form** | Shareable link for users to submit tickets |
-| **Feedback Collection** | Send feedback requests on closed tickets |
-| **Reports** | Weekly and monthly reports with SLA metrics |
+### Option 4: Each Runs Locally (Dev Only)
+- Each person runs Quick Start steps
+- Separate databases (not shared)
 
-## Settings Configuration
+---
 
-Go to **Settings** page to configure:
+## ⚙️ Settings Configuration
 
-1. **Response Time Targets** - SLA hours for each priority
-2. **Team Members** - Add your team, toggle active/inactive
-3. **Public Base URL** - **Critical for mobile access**
-   - Set to your public URL (e.g., `http://192.168.1.50:8000` or `https://helpdesk.company.com`)
-   - The review form link will use this base URL
-   - Without this, the link uses `localhost` which only works on the server machine
+Go to **Settings** page in the app:
 
-## Project Structure
+1. **Response Time Targets** - SLA hours per priority
+2. **Team Members** - Add team, toggle active/inactive
+3. **Public Base URL** - **Required for mobile access**
+   - Railway: `https://your-app.up.railway.app`
+   - LAN: `http://192.168.1.50:8000`
+   - Custom domain: `https://helpdesk.company.com`
+   - Without this, review links use `localhost` (broken on phones)
+
+---
+
+## 📱 Mobile Usage
+
+**No app install needed** - it's a responsive web app:
+1. Open the URL in Chrome/Safari
+2. **Menu → "Add to Home Screen"** → Works like a native app
+3. Already includes PWA manifest for offline-ready experience
+
+---
+
+## 🏗️ Project Structure
 
 ```
 ticketing-system/
@@ -82,7 +108,10 @@ ticketing-system/
 ├── schemas.py           # Pydantic schemas
 ├── database.py          # Database configuration
 ├── requirements.txt     # Python dependencies
-├── tickets.db           # SQLite database (created on first run)
+├── railway.json         # Railway deployment config
+├── Procfile             # Render/Heroku config
+├── runtime.txt          # Python version
+├── tickets.db           # SQLite database (auto-created)
 ├── templates/           # Jinja2 HTML templates
 │   ├── base.html
 │   ├── dashboard.html
@@ -91,29 +120,44 @@ ticketing-system/
 │   ├── settings.html
 │   ├── public_form.html
 │   └── partials/
-└── static/              # Static assets (if any)
+└── static/              # Static assets
 ```
 
-## Requirements
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Ticket Management** | Create, update, park, close, reset, delete tickets |
+| **SLA Tracking** | Auto-calculates Met/Missed/Pending based on priority targets |
+| **Priority Levels** | Critical (2hr), Technical (8hr), Ordinary (24hr) - configurable |
+| **Team Management** | Add/remove members, assign ticket owners |
+| **Public Review Form** | Shareable link for users to submit tickets |
+| **Feedback Collection** | Send feedback requests on closed tickets |
+| **Reports** | Weekly/monthly with SLA metrics |
+
+---
+
+## 🔧 Requirements
 
 - Python 3.10+
-- Dependencies in `requirements.txt`:
-  - fastapi
-  - uvicorn
-  - sqlalchemy
-  - pydantic
-  - jinja2
-  - python-multipart
+- Dependencies: `fastapi`, `uvicorn`, `sqlalchemy`, `pydantic`, `jinja2`, `python-multipart`
 
-## Common Issues
+---
+
+## 🐛 Common Issues
 
 | Issue | Solution |
 |-------|----------|
-| "Address already in use" | Kill existing process: `pkill -f "python main.py"` |
-| Review link doesn't work on phone | Set **Public Base URL** in Settings |
-| SLA not calculating | Ensure tickets have `first_reply_at` set when first responding |
-| Database locked | Only run one instance of the server at a time |
+| "Address already in use" | `pkill -f "python main.py"` |
+| Review link broken on phone | Set **Public Base URL** in Settings |
+| SLA not calculating | Ensure `first_reply_at` is set on first response |
+| Database locked | Only run one server instance |
+| Railway deploy fails | Check build logs, ensure `requirements.txt` is correct |
 
-## License
+---
+
+## 📄 License
 
 Internal use - Gladtidings Software Ltd
