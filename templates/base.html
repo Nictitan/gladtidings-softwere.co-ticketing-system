@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gladtidings Help Desk{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/response-targets.js"></script>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#1e40af">
+    <style>
+        .sla-met { background-color: #dcfce7; color: #166534; }
+        .sla-missed { background-color: #fee2e2; color: #991b1b; }
+        .sla-pending { background-color: #fef3c7; color: #92400e; }
+        .priority-critical { border-left: 4px solid #dc2626; }
+        .priority-technical { border-left: 4px solid #f59e0b; }
+        .priority-ordinary { border-left: 4px solid #3b82f6; }
+        .status-parked { background-color: #fef3c7; }
+        .ticket-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        @media (max-width: 640px) {
+            .table-responsive { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold">Gladtidings Help Desk</a>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="/" class="px-3 py-2 rounded hover:bg-blue-800">Dashboard</a>
+                    <a href="/tickets/new" class="px-3 py-2 rounded hover:bg-blue-800">New Ticket</a>
+                    <a href="/reports/weekly" class="px-3 py-2 rounded hover:bg-blue-800">Weekly</a>
+                    <a href="/reports/monthly" class="px-3 py-2 rounded hover:bg-blue-800">Monthly</a>
+                    <a href="/settings" class="px-3 py-2 rounded hover:bg-blue-800">Settings</a>
+                </div>
+                <div class="md:hidden">
+                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="p-2 rounded hover:bg-blue-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden px-4 pb-4 space-y-2">
+            <a href="/" class="block px-3 py-2 rounded hover:bg-blue-800">Dashboard</a>
+            <a href="/tickets/new" class="block px-3 py-2 rounded hover:bg-blue-800">New Ticket</a>
+            <a href="/reports/weekly" class="block px-3 py-2 rounded hover:bg-blue-800">Weekly</a>
+            <a href="/reports/monthly" class="block px-3 py-2 rounded hover:bg-blue-800">Monthly</a>
+            <a href="/settings" class="block px-3 py-2 rounded hover:bg-blue-800">Settings</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="p-4 rounded mb-2 {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-100 border-t mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
+            Gladtidings Software Ltd — IT Help Desk
+        </div>
+    </footer>
+
+    <script>
+        // Auto-refresh dashboard every 30 seconds
+        if (window.location.pathname === '/') {
+            setInterval(() => {
+                htmx.ajax('GET', '/api/tickets/open', { target: '#tickets-body', swap: 'innerHTML' });
+            }, 30000);
+        }
+    </script>
+</body>
+</html>

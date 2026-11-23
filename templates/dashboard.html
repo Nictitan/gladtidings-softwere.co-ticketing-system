@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <h1 class="text-2xl font-bold text-gray-900">Open Tickets</h1>
+    <a href="/tickets/new" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm">
+        + New Ticket
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+    <div class="bg-white p-4 rounded-lg shadow">
+        <p class="text-sm text-gray-500">Open</p>
+        <p class="text-3xl font-bold text-gray-900">{{ stats.open }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
+        <p class="text-sm text-gray-500">Critical</p>
+        <p class="text-3xl font-bold text-red-600">{{ stats.critical }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-amber-500">
+        <p class="text-sm text-gray-500">Technical</p>
+        <p class="text-3xl font-bold text-amber-600">{{ stats.technical }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+        <p class="text-sm text-gray-500">Ordinary</p>
+        <p class="text-3xl font-bold text-blue-600">{{ stats.ordinary }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
+        <p class="text-sm text-gray-500">Parked</p>
+        <p class="text-3xl font-bold text-yellow-600">{{ stats.parked }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
+        <p class="text-sm text-gray-500">SLA Met</p>
+        <p class="text-3xl font-bold text-green-600">{{ stats.sla_met_pct }}%</p>
+    </div>
+</div>
+
+<!-- Tickets Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full" id="tickets-table">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SLA</th>
+                </tr>
+            </thead>
+            <tbody id="tickets-body" class="divide-y divide-gray-200">
+                {% for item in tickets %}
+                {% set t = item.ticket %}
+                <tr class="{% if item.is_parked %}status-parked{% endif %} ticket-card {% if item.sla_status == 'met' %}sla-met{% elif item.sla_status == 'missed' %}sla-missed{% else %}sla-pending{% endif %} priority-{{ t.priority.name.lower() }}" hx-get="/tickets/{{ t.id }}" hx-trigger="click" hx-target="#ticket-detail" hx-push-url="true">
+                    <td class="px-4 py-3">
+                        <span class="font-mono text-sm font-medium text-blue-600 hover:underline cursor-pointer">{{ t.ticket_number }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900">{{ t.reporter_name }}{% if t.school_institution %}<br><span class="text-gray-500">{{ t.school_institution }}</span>{% endif %}</td>
+                    <td class="px-4 py-3 text-sm text-gray-900">{{ t.product.value }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{{ t.description[:80] }}{% if t.description|length > 80 %}...{% endif %}</td>
+                    <td class="px-4 py-3">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                            {% if t.priority == priorities[0] %}bg-red-100 text-red-800
+                            {% elif t.priority == priorities[1] %}bg-amber-100 text-amber-800
+                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ t.priority.value.split(' ')[0] }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                            {% if t.status == statuses[0] %}bg-gray-100 text-gray-800
+                            {% elif t.status == statuses[1] %}bg-blue-100 text-blue-800
+                            {% elif t.status == statuses[2] %}bg-yellow-100 text-yellow-800
+                            {% elif t.status == statuses[3] %}bg-purple-100 text-purple-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ t.status.value }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900">{{ t.owner or '—' }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-900">{{ item.age_hours }}h</td>
+                    <td class="px-4 py-3">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                            {% if item.sla_status == 'met' %}bg-green-100 text-green-800
+                            {% elif item.sla_status == 'missed' %}bg-red-100 text-red-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {% if item.sla_status == 'met' %}✓ Met
+                            {% elif item.sla_status == 'missed' %}✗ Missed
+                            {% else %}⏳ Pending{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not tickets %}
+                <tr>
+                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">No open tickets. Great job!</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Ticket Detail Modal/Slide-out -->
+<div id="ticket-detail" class="hidden lg:block mt-6"></div>
+
+{% endblock %}

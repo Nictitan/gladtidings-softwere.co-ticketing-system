@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="text-2xl font-bold text-gray-900">Monthly Report — {{ month }}</h1>
+        <a href="/" class="text-blue-600 hover:underline">← Back to Dashboard</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Received</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closed</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recurring Causes</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SLA Met %</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Escalated</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FAQ Written</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Resolution (days)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for row in rows %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ row.product }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                {% if row.priority == 'Critical (users blocked)' %}bg-red-100 text-red-800
+                                {% elif row.priority == 'Technical problem (not working properly)' %}bg-amber-100 text-amber-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ row.priority.split(' ')[0] }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ row.received }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ row.closed }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600 max-w-xs">
+                            {% if row.causes %}
+                                <ul class="list-disc list-inside space-y-1">
+                                {% for cause in row.causes %}
+                                    <li class="truncate">{{ cause[:80] }}{% if cause|length > 80 %}...{% endif %}</li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-medium {% if row.sla_met and row.sla_met >= 95 %}text-green-600{% elif row.sla_met and row.sla_met >= 80 %}text-amber-600{% elif row.sla_met %}text-red-600{% else %}text-gray-500{% endif %}">{{ row.sla_met or '—' }}%</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ row.escalated }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ row.faq_written }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">{{ row.avg_resolution or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not rows %}
+                    <tr>
+                        <td colspan="9" class="px-4 py-8 text-center text-gray-500">No tickets this month.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-6 text-sm text-gray-500">
+        <p>Recurring causes are grouped from closed tickets. FAQ Written and Escalated counts are from this month's tickets.</p>
+    </div>
+</div>
+{% endblock %}

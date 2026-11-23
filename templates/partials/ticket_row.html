@@ -1,0 +1,38 @@
+<tr class="{% if is_parked %}status-parked{% endif %} ticket-card {% if sla_status == 'met' %}sla-met{% elif sla_status == 'missed' %}sla-missed{% else %}sla-pending{% endif %} priority-{{ ticket.priority.name.lower() }}" hx-get="/tickets/{{ ticket.id }}" hx-trigger="click" hx-target="#ticket-detail" hx-push-url="true">
+    <td class="px-4 py-3">
+        <span class="font-mono text-sm font-medium text-blue-600 hover:underline cursor-pointer">{{ ticket.ticket_number }}</span>
+    </td>
+    <td class="px-4 py-3 text-sm text-gray-900">{{ ticket.reporter_name }}{% if ticket.school_institution %}<br><span class="text-gray-500">{{ ticket.school_institution }}</span>{% endif %}</td>
+    <td class="px-4 py-3 text-sm text-gray-900">{{ ticket.product.value }}</td>
+    <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{{ ticket.description[:80] }}{% if ticket.description|length > 80 %}...{% endif %}</td>
+    <td class="px-4 py-3">
+        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+            {% if ticket.priority == priorities[0] %}bg-red-100 text-red-800
+            {% elif ticket.priority == priorities[1] %}bg-amber-100 text-amber-800
+            {% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ ticket.priority.value.split(' ')[0] }}
+        </span>
+    </td>
+    <td class="px-4 py-3">
+        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+            {% if ticket.status == statuses[0] %}bg-gray-100 text-gray-800
+            {% elif ticket.status == statuses[1] %}bg-blue-100 text-blue-800
+            {% elif ticket.status == statuses[2] %}bg-yellow-100 text-yellow-800
+            {% elif ticket.status == statuses[3] %}bg-purple-100 text-purple-800
+            {% else %}bg-green-100 text-green-800{% endif %}">
+            {{ ticket.status.value }}
+        </span>
+    </td>
+    <td class="px-4 py-3 text-sm text-gray-900">{{ ticket.owner or '—' }}</td>
+    <td class="px-4 py-3 text-sm text-gray-900">{{ age_hours }}h</td>
+    <td class="px-4 py-3">
+        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+            {% if sla_status == 'met' %}bg-green-100 text-green-800
+            {% elif sla_status == 'missed' %}bg-red-100 text-red-800
+            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+            {% if sla_status == 'met' %}✓ Met
+            {% elif sla_status == 'missed' %}✗ Missed
+            {% else %}⏳ Pending{% endif %}
+        </span>
+    </td>
+</tr>

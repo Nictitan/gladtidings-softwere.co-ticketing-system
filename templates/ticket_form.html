@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Log a New Ticket</h1>
+    
+    <form class="bg-white p-6 rounded-lg shadow space-y-6" hx-post="/tickets">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Source <span class="text-red-500">*</span></label>
+            <select name="source" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for s in sources %}
+                <option value="{{ s.value }}" {% if s == sources[0] %}selected{% endif %}>{{ s.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Reporter Name <span class="text-red-500">*</span></label>
+            <input type="text" name="reporter_name" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">School / Institution</label>
+            <input type="text" name="school_institution" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Springfield Primary">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contact (phone or email)</label>
+            <input type="text" name="contact" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+260 97 123 4567 or john@school.edu">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Product / Service <span class="text-red-500">*</span></label>
+            <select name="product" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for p in products %}
+                <option value="{{ p.value }}">{{ p.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Short Description <span class="text-red-500">*</span></label>
+            <textarea name="description" required rows="4" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="What went wrong?"></textarea>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Priority <span class="text-red-500">*</span></label>
+            <select name="priority" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for p in priorities %}
+                <option value="{{ p.value }}">{{ p.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Owner</label>
+            <select name="owner" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">— Unassigned —</option>
+                {% for m in team %}
+                <option value="{{ m.name }}">{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="flex gap-4 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition font-medium">
+                Create Ticket
+            </button>
+            <a href="/" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded hover:bg-gray-300 transition font-medium text-center">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
