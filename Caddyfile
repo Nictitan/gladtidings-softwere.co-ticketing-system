@@ -1,0 +1,10 @@
+# Replace 'helpdesk.yourdomain.com' with your actual domain
+# For local development without a domain, use: localhost:8000
+helpdesk.yourdomain.com {
+    reverse_proxy app:8000
+}
+
+# For local development (uncomment and comment above if no domain):
+# localhost:8000 {
+#     reverse_proxy app:8000
+# }

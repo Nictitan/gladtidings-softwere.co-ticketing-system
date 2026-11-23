@@ -141,7 +141,7 @@
                 <div class="space-y-2">
                     <button hx-post="/tickets/{{ ticket.id }}/park" hx-target="#ticket-detail" hx-swap="outerHTML" class="w-full bg-yellow-600 text-white py-2 rounded hover:bg-yellow-700 transition">Put on Wait</button>
                     <button hx-post="/tickets/{{ ticket.id }}" hx-target="#ticket-detail" hx-swap="outerHTML" hx-vals='{"status": "Closed"}' class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Close Ticket</button>
-                    {% if ticket.status == statuses[4] %}
+                    {% if ticket.status == status_enum.CLOSED %}
                     <button hx-post="/tickets/{{ ticket.id }}/reset" hx-target="#ticket-detail" hx-swap="outerHTML" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Reset / Reopen</button>
                     {% endif %}
                     <button hx-delete="/tickets/{{ ticket.id }}" hx-target="#ticket-detail" hx-swap="outerHTML" hx-confirm="Are you sure you want to delete this ticket? This cannot be undone." class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition">Delete Ticket</button>
@@ -149,7 +149,7 @@
             </div>
 
             <!-- Feedback Link -->
-            {% if ticket.status == statuses[4] and not ticket.feedback_sent %}
+            {% if ticket.status == status_enum.CLOSED and not ticket.feedback_sent %}
             <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <p class="text-sm text-blue-800 mb-2">Send feedback request:</p>
                 <a href="/feedback/{{ ticket.ticket_number }}" target="_blank" class="text-blue-600 hover:underline text-sm">Open Feedback Form →</a>

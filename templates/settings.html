@@ -51,12 +51,26 @@
         <div id="team-list">
             {% for member in team %}
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded mb-2">
-                <span class="{{ 'text-gray-900' if member.is_active else 'text-gray-400 line-through' }}">{{ member.name }}</span>
-                <form hx-post="/team/{{ member.id }}/toggle" hx-target="#team-list" hx-swap="outerHTML">
-                    <button type="submit" class="px-3 py-1 text-xs rounded {% if member.is_active %}bg-gray-200 text-gray-700 hover:bg-gray-300{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %}">
-                        {% if member.is_active %}Deactivate{% else %}Activate{% endif %}
-                    </button>
-                </form>
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <span class="{{ 'text-gray-900' if member.is_active else 'text-gray-400 line-through' }} truncate block">{{ member.name }}</span>
+                    {% if not member.is_active %}
+                    <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Inactive</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-2 ml-4">
+                    <form hx-post="/team/{{ member.id }}/edit" hx-target="#team-list" hx-swap="outerHTML" class="flex items-center gap-1">
+                        <input type="text" name="name" value="{{ member.name }}" class="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-32">
+                        <button type="submit" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                    </form>
+                    <form hx-post="/team/{{ member.id }}/toggle" hx-target="#team-list" hx-swap="outerHTML">
+                        <button type="submit" class="px-3 py-1 text-xs rounded {% if member.is_active %}bg-gray-200 text-gray-700 hover:bg-gray-300{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %}">
+                            {% if member.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </button>
+                    </form>
+                    <form hx-post="/team/{{ member.id }}/delete" hx-target="#team-list" hx-swap="outerHTML" hx-confirm="Delete '{{ member.name }}'? Open tickets will be unassigned.">
+                        <button type="submit" class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Delete</button>
+                    </form>
+                </div>
             </div>
             {% endfor %}
             {% if not team %}
@@ -69,14 +83,28 @@
     <div class="bg-white p-6 rounded-lg shadow">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Public Review Form</h2>
         <p class="text-sm text-gray-500 mb-2">Share this link with users:</p>
-        {% set public_url = settings.public_base_url ~ '/public' if settings.public_base_url else request.url_for('public_form') %}
+        {% set public_url = settings.public_base_url ~ '/public' if settings.public_base_url else (detected_base_url ~ '/public' if detected_base_url else request.url_for('public_form')) %}
         <div class="flex gap-2">
             <input type="text" value="{{ public_url }}" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm font-mono" id="public-form-url">
             <button onclick="navigator.clipboard.writeText('{{ public_url }}')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm">Copy</button>
         </div>
-        {% if not settings.public_base_url %}
+        {% if not settings.public_base_url and detected_base_url %}
+        <p class="text-xs text-gray-500 mt-1">Auto-detected: <code>{{ detected_base_url }}</code> (set Public Base URL above to override)</p>
+        {% elif not settings.public_base_url %}
         <p class="text-xs text-gray-500 mt-1">Note: This link uses the current host. Set a Public Base URL above for a shareable link.</p>
         {% endif %}
+    </div>
+
+    <!-- Docker/Deployment Info -->
+    <div class="bg-blue-50 p-6 rounded-lg shadow border border-blue-200">
+        <h2 class="text-lg font-semibold text-blue-900 mb-3">Deployment Info</h2>
+        <p class="text-sm text-blue-800 mb-2">Running in Docker with Caddy reverse proxy:</p>
+        <ul class="text-sm text-blue-700 space-y-1">
+            <li>• Auto HTTPS via Let's Encrypt (configure domain in Caddyfile)</li>
+            <li>• SQLite database persisted in ./data volume</li>
+            <li>• Public Base URL auto-detected from proxy headers</li>
+            <li>• Run with: <code class="bg-blue-100 px-1 rounded">docker compose up -d</code></li>
+        </ul>
     </div>
 </div>
 {% endblock %}

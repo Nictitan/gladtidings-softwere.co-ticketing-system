@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_, or_, cast, Date
 from datetime import datetime, timedelta, date, timezone
 from typing import Optional, List
-import json
 
 from database import get_db, init_db
 from models import Ticket, Setting, TeamMember, PriorityEnum, StatusEnum, SourceEnum, ProductEnum
@@ -19,6 +18,11 @@ templates = Jinja2Templates(directory="templates")
 
 # Initialize DB on startup
 init_db()
+
+# Startup event to seed demo data
+@app.on_event("startup")
+async def startup_event():
+    seed_demo_data()
 
 
 # ---------- Helper Functions ----------
@@ -34,6 +38,114 @@ def get_settings_dict(db: Session) -> dict:
         "response_target_ordinary_hours": int(get_setting(db, "response_target_ordinary_hours", "24")),
         "public_base_url": get_setting(db, "public_base_url", ""),
     }
+
+
+def get_base_url(request: Request) -> str:
+    """Auto-detect base URL from request headers (works behind reverse proxy)."""
+    forwarded = request.headers.get("x-forwarded-proto")
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    if forwarded and host:
+        return f"{forwarded}://{host}"
+    return str(request.base_url).rstrip("/")
+
+
+def seed_demo_data() -> None:
+    """Seed demo tickets if database is empty."""
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        if db.query(Ticket).count() == 0:
+            demo_tickets = [
+                {
+                    "source": SourceEnum.PHONE_CALL,
+                    "reporter_name": "John Mwanza",
+                    "school_institution": "Lusaka Primary School",
+                    "contact": "+260 97 123 4567",
+                    "product": ProductEnum.ZAMED,
+                    "description": "Students cannot log into Zamed portal. Getting 'Invalid credentials' error even with correct password.",
+                    "priority": PriorityEnum.CRITICAL,
+                    "owner": "Sarah Chilufya",
+                    "status": StatusEnum.IN_PROGRESS,
+                    "first_reply_at": datetime.now() - timedelta(hours=1),
+                },
+                {
+                    "source": SourceEnum.EMAIL,
+                    "reporter_name": "Grace Banda",
+                    "school_institution": "Copperbelt Secondary",
+                    "contact": "grace.banda@school.edu",
+                    "product": ProductEnum.COINFOMAS,
+                    "description": "Coinfomas reports showing incorrect totals for Term 2 fees. Amounts don't match manual calculations.",
+                    "priority": PriorityEnum.TECHNICAL,
+                    "owner": "Mike Phiri",
+                    "status": StatusEnum.NEW,
+                },
+                {
+                    "source": SourceEnum.WHATSAPP,
+                    "reporter_name": "Peter Sakala",
+                    "school_institution": "Ndola Technical Institute",
+                    "contact": "+260 96 987 6543",
+                    "product": ProductEnum.ZAMPREP,
+                    "description": "ZamPrep mobile app crashes when opening mock exam section on Android 14 devices.",
+                    "priority": PriorityEnum.TECHNICAL,
+                    "owner": "Sarah Chilufya",
+                    "status": StatusEnum.PARKED,
+                },
+                {
+                    "source": SourceEnum.REVIEW_PAGE,
+                    "reporter_name": "Mary Tembo",
+                    "school_institution": "Kitwe Girls High",
+                    "contact": "mary.tembo@kitwegirls.edu",
+                    "product": ProductEnum.SOFTWARE_DEV,
+                    "description": "Request for custom report module to track student attendance by class and term.",
+                    "priority": PriorityEnum.ORDINARY,
+                    "owner": "Mike Phiri",
+                    "status": StatusEnum.NEW,
+                },
+                {
+                    "source": SourceEnum.PHONE_CALL,
+                    "reporter_name": "David Lungu",
+                    "school_institution": "Chingola Primary",
+                    "contact": "+260 97 555 0123",
+                    "product": ProductEnum.NETWORKING,
+                    "description": "School WiFi keeps dropping. Teachers can't access online resources during lessons.",
+                    "priority": PriorityEnum.CRITICAL,
+                    "owner": "Sarah Chilufya",
+                    "status": StatusEnum.ESCALATED,
+                    "escalated_to_board": True,
+                    "escalated_at": datetime.now() - timedelta(days=2),
+                    "first_reply_at": datetime.now() - timedelta(hours=3),
+                },
+                {
+                    "source": SourceEnum.EMAIL,
+                    "reporter_name": "Esther Phiri",
+                    "school_institution": "Mongu Secondary",
+                    "contact": "esther.phiri@mongusec.edu",
+                    "product": ProductEnum.IT_TRAINING,
+                    "description": "Need training schedule for new teachers on basic computer skills and Zamed usage.",
+                    "priority": PriorityEnum.ORDINARY,
+                    "owner": "Mike Phiri",
+                    "status": StatusEnum.CLOSED,
+                    "closed_at": datetime.now() - timedelta(days=5),
+                    "cause": "Training conducted on 15th-17th Jan. Materials shared via email.",
+                    "first_reply_at": datetime.now() - timedelta(days=10),
+                    "faq_written": True,
+                    "feedback_sent": True,
+                },
+            ]
+            for t in demo_tickets:
+                ticket = Ticket(
+                    ticket_number=generate_ticket_number(db),
+                    **t
+                )
+                db.add(ticket)
+                db.flush()  # Flush to update ticket count for next generate_ticket_number call
+            db.commit()
+            print("Demo data seeded successfully")
+    except Exception as e:
+        print(f"Error seeding demo data: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 
 def get_target_hours(db: Session, priority: PriorityEnum) -> int:
@@ -118,12 +230,12 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     team = db.query(TeamMember).filter(TeamMember.is_active == True).all()
     settings = get_settings_dict(db)
     
-    # Build public form URL
+    # Build public form URL - auto-detect if not configured
     public_form_url = settings.get("public_base_url", "")
     if public_form_url:
         public_form_url = public_form_url.rstrip("/") + "/public"
     else:
-        public_form_url = str(request.url_for('public_form'))
+        public_form_url = get_base_url(request) + "/public"
     
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
@@ -187,6 +299,42 @@ async def create_ticket(
     return response
 
 
+@app.post("/team/{member_id}/edit")
+async def edit_team_member(
+    member_id: int,
+    name: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    member = db.query(TeamMember).filter(TeamMember.id == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    member.name = name
+    db.commit()
+    return RedirectResponse(url="/settings", status_code=303)
+
+
+@app.post("/team/{member_id}/delete")
+async def delete_team_member(
+    member_id: int,
+    db: Session = Depends(get_db),
+):
+    member = db.query(TeamMember).filter(TeamMember.id == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    open_tickets = db.query(Ticket).filter(
+        Ticket.owner == member.name,
+        Ticket.status != StatusEnum.CLOSED
+    ).count()
+    if open_tickets > 0:
+        db.query(Ticket).filter(
+            Ticket.owner == member.name,
+            Ticket.status != StatusEnum.CLOSED
+        ).update({Ticket.owner: None})
+    db.delete(member)
+    db.commit()
+    return RedirectResponse(url="/settings", status_code=303)
+
+
 @app.get("/tickets/{ticket_id}", response_class=HTMLResponse)
 async def ticket_detail(request: Request, ticket_id: int, db: Session = Depends(get_db)):
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
@@ -212,6 +360,7 @@ async def ticket_detail(request: Request, ticket_id: int, db: Session = Depends(
         "priorities": list(PriorityEnum),
         "statuses": list(StatusEnum),
         "products": list(ProductEnum),
+        "status_enum": StatusEnum,
     })
 
 
@@ -614,10 +763,13 @@ async def monthly_report(request: Request, db: Session = Depends(get_db)):
 async def settings_page(request: Request, db: Session = Depends(get_db)):
     settings = get_settings_dict(db)
     team = db.query(TeamMember).all()
+    # Auto-detect base URL for display
+    detected_url = get_base_url(request)
     return templates.TemplateResponse("settings.html", {
         "request": request,
         "settings": settings,
         "team": team,
+        "detected_base_url": detected_url,
     })
 
 
